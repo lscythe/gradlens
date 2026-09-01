@@ -96,6 +96,10 @@ Comparison mode reports added, removed, updated, and module-coordinate changes. 
 
 Release-note lookup prefers an exact page for the selected version. When that cannot be verified, the output labels a metadata-derived generic releases page as `generic`, or reports `none` rather than presenting a guessed URL as exact.
 
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
 ## Development
 
 ```sh
