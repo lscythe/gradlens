@@ -1,4 +1,5 @@
 mod catalog;
+mod changes;
 mod cli;
 mod gradle;
 mod graph;
@@ -18,8 +19,9 @@ use clap::Parser;
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    match Cli::parse().command {
-        Some(Command::Inspect(args)) => match Inspector::new(".", args.catalog) {
+    let cli = Cli::parse();
+    match cli.command {
+        Some(Command::Inspect(args)) => match Inspector::new(".", args.catalog, cli.baseline) {
             Ok(inspector) => match inspector.inspect(&args.configuration).await {
                 Ok(result) => {
                     print!("{}", plain::render(&result));
@@ -29,7 +31,7 @@ async fn main() -> ExitCode {
             },
             Err(error) => unavailable(&error.to_string()),
         },
-        None => match Inspector::new(".", "gradle/libs.versions.toml") {
+        None => match Inspector::new(".", "gradle/libs.versions.toml", cli.baseline) {
             Ok(inspector) => match tui::run(inspector) {
                 Ok(()) => ExitCode::SUCCESS,
                 Err(error) => unavailable(&error.to_string()),

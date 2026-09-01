@@ -115,10 +115,15 @@ fn render_libraries(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, t
                 .enumerate()
                 .filter(|(_, v)| filter(&v.alias, &app.search))
                 .map(|(i, v)| {
+                    let change = v
+                        .change
+                        .as_ref()
+                        .map(|change| format!(" [{}]", change.kind.label()))
+                        .unwrap_or_default();
                     ListItem::new(if i == app.library_index {
-                        format!("> {}", v.alias)
+                        format!("> {}{change}", v.alias)
                     } else {
-                        format!("  {}", v.alias)
+                        format!("  {}{change}", v.alias)
                     })
                 })
                 .collect()
@@ -172,6 +177,27 @@ fn render_release(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, the
             };
             vec![
                 Line::from(format!("Version {}  [{label}]", lib.release.version)),
+                Line::from(
+                    lib.change
+                        .as_ref()
+                        .map(|change| {
+                            format!(
+                                "Change: {}  {} → {}",
+                                change.kind.label(),
+                                change
+                                    .baseline
+                                    .as_ref()
+                                    .map(ToString::to_string)
+                                    .unwrap_or_else(|| "not present".into()),
+                                change
+                                    .current
+                                    .as_ref()
+                                    .map(ToString::to_string)
+                                    .unwrap_or_else(|| "not present".into())
+                            )
+                        })
+                        .unwrap_or_default(),
+                ),
                 Line::from(
                     lib.release
                         .url

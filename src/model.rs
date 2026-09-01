@@ -50,6 +50,33 @@ pub struct ReleaseLink {
     pub diagnostic: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ChangeKind {
+    Added,
+    Removed,
+    Updated,
+    ModuleChanged,
+}
+
+impl ChangeKind {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Added => "added",
+            Self::Removed => "removed",
+            Self::Updated => "updated",
+            Self::ModuleChanged => "module changed",
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct LibraryChange {
+    pub alias: String,
+    pub kind: ChangeKind,
+    pub baseline: Option<ComponentId>,
+    pub current: Option<ComponentId>,
+}
+
 #[derive(Clone, Debug)]
 pub struct LibraryInspection {
     pub alias: String,
@@ -57,12 +84,14 @@ pub struct LibraryInspection {
     pub selected: ComponentId,
     pub dependencies: Vec<DependencyNode>,
     pub release: ReleaseLink,
+    pub change: Option<LibraryChange>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Inspection {
     pub configuration: String,
     pub libraries: Vec<LibraryInspection>,
+    pub removed: Vec<LibraryChange>,
 }
 
 #[cfg(test)]

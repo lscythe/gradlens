@@ -1,3 +1,7 @@
+#[path = "../src/catalog.rs"]
+mod catalog;
+#[path = "../src/changes.rs"]
+mod changes;
 #[path = "../src/model.rs"]
 mod model;
 #[path = "../src/plain.rs"]
@@ -34,7 +38,9 @@ fn renders_selected_version_release_and_tree_without_ansi() {
                 match_kind: ReleaseMatch::None,
                 diagnostic: None,
             },
+            change: None,
         }],
+        removed: vec![],
     };
     let output = plain::render(&inspection);
     assert!(output.contains("requested: g:a:1"));

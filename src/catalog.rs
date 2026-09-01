@@ -83,7 +83,11 @@ pub fn parse(path: &Path) -> Result<Catalog, CatalogError> {
         path: path.display().to_string(),
         source,
     })?;
-    let raw: RawCatalog = toml::from_str(&text)?;
+    parse_str(&text)
+}
+
+pub fn parse_str(text: &str) -> Result<Catalog, CatalogError> {
+    let raw: RawCatalog = toml::from_str(text)?;
     let mut libraries = Vec::with_capacity(raw.libraries.len());
     for (alias, value) in raw.libraries {
         libraries.push(normalize(alias, value, &raw.versions)?);

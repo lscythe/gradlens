@@ -6,6 +6,27 @@ pub fn render(inspection: &Inspection) -> String {
     let mut output = format!("configuration: {}\n", inspection.configuration);
     for library in &inspection.libraries {
         let _ = writeln!(output, "\n{}", library.alias);
+        if let Some(change) = &library.change {
+            let _ = writeln!(output, "  change:    {}", change.kind.label());
+            let _ = writeln!(
+                output,
+                "  baseline:  {}",
+                change
+                    .baseline
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| "not present".into())
+            );
+            let _ = writeln!(
+                output,
+                "  current:   {}",
+                change
+                    .current
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| "not present".into())
+            );
+        }
         let requested = library
             .requested
             .as_ref()
@@ -41,6 +62,21 @@ pub fn render(inspection: &Inspection) -> String {
                 node,
                 "    ",
                 index + 1 == library.dependencies.len(),
+            );
+        }
+    }
+    if !inspection.removed.is_empty() {
+        let _ = writeln!(output, "\nremoved libraries:");
+        for change in &inspection.removed {
+            let _ = writeln!(
+                output,
+                "  {}: {}",
+                change.alias,
+                change
+                    .baseline
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| "unknown".into())
             );
         }
     }
