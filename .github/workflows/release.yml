@@ -8,9 +8,38 @@ permissions:
   contents: read
 
 jobs:
+  prepare:
+    name: Prepare draft release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0, Node.js 24
+        with:
+          persist-credentials: false
+      - name: Verify tag matches Cargo version
+        run: |
+          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')
+          test "$GITHUB_REF_NAME" = "v$version" || {
+            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $version" >&2
+            exit 1
+          }
+      - name: Create draft release and upload installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            scripts/install-release.sh#gradlens-installer.sh \
+            scripts/install-release.ps1#gradlens-installer.ps1 \
+            --verify-tag --generate-notes --title "$GITHUB_REF_NAME" --draft
+
   build:
     name: Build ${{ matrix.target }}
+    needs: prepare
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -22,17 +51,9 @@ jobs:
           - { os: windows-2025, target: x86_64-pc-windows-msvc, archive: zip }
     steps:
       - name: Check out source
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0, Node.js 24
         with:
           persist-credentials: false
-      - name: Verify tag matches Cargo version
-        shell: bash
-        run: |
-          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | sed -n '1p')
-          test "$GITHUB_REF_NAME" = "v$version" || {
-            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $version" >&2
-            exit 1
-          }
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
       - name: Build release binary
@@ -43,7 +64,7 @@ jobs:
         run: |
           name="gradlens-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$name"
-          cp "target/${{ matrix.target }}/release/gradlens" README.md LICENSE install.sh "$name/"
+          cp "target/${{ matrix.target }}/release/gradlens" README.md LICENSE "$name/"
           tar -czf "$name.tar.gz" "$name"
           shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
       - name: Package Windows binary
@@ -52,38 +73,24 @@ jobs:
         run: |
           $name = "gradlens-$env:GITHUB_REF_NAME-${{ matrix.target }}"
           New-Item -ItemType Directory $name | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/gradlens.exe", "README.md", "LICENSE", "install.ps1" $name
+          Copy-Item "target/${{ matrix.target }}/release/gradlens.exe", "README.md", "LICENSE" $name
           Compress-Archive -Path $name -DestinationPath "$name.zip"
           $hash = (Get-FileHash "$name.zip" -Algorithm SHA256).Hash.ToLower()
           "$hash  $name.zip" | Set-Content "$name.zip.sha256"
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: gradlens-${{ matrix.target }}
-          path: gradlens-${{ github.ref_name }}-${{ matrix.target }}.*
-          if-no-files-found: error
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh release upload "$GITHUB_REF_NAME" gradlens-${GITHUB_REF_NAME}-${{ matrix.target }}.* --clobber
 
-  release:
+  publish:
     name: Publish GitHub Release
     needs: build
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v5.0.0
-        with:
-          path: dist
-          merge-multiple: true
-      - name: Check out installer scripts
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-      - name: Add standalone installers
-        run: |
-          cp scripts/install-release.sh dist/gradlens-installer.sh
-          cp scripts/install-release.ps1 dist/gradlens-installer.ps1
-      - name: Create GitHub Release
+      - name: Publish draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
