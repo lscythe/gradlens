@@ -653,7 +653,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gradle-checker"
+name = "gradlens"
 version = "0.1.0"
 dependencies = [
  "clap",

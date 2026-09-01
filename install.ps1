@@ -24,9 +24,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-$source = Join-Path $repo "target\release\gradle-checker.exe"
-$destination = Join-Path $InstallDir "gradle-checker.exe"
-$temporary = Join-Path $InstallDir (".gradle-checker.{0}.tmp" -f $PID)
+$source = Join-Path $repo "target\release\gradlens.exe"
+$destination = Join-Path $InstallDir "gradlens.exe"
+$temporary = Join-Path $InstallDir (".gradlens.{0}.tmp" -f $PID)
 
 try {
     Copy-Item -Force $source $temporary
@@ -35,8 +35,8 @@ try {
     Remove-Item -Force -ErrorAction SilentlyContinue $temporary
 }
 
-Write-Host "Installed gradle-checker to $destination"
+Write-Host "Installed gradlens to $destination"
 $pathEntries = $env:PATH -split [IO.Path]::PathSeparator
 if ($InstallDir -notin $pathEntries) {
-    Write-Warning "Add $InstallDir to PATH to run gradle-checker from any directory."
+    Write-Warning "Add $InstallDir to PATH to run gradlens from any directory."
 }

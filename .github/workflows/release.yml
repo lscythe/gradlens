@@ -41,26 +41,26 @@ jobs:
         if: matrix.archive == 'tar.gz'
         shell: bash
         run: |
-          name="gradle-checker-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          name="gradlens-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$name"
-          cp "target/${{ matrix.target }}/release/gradle-checker" README.md LICENSE install.sh "$name/"
+          cp "target/${{ matrix.target }}/release/gradlens" README.md LICENSE install.sh "$name/"
           tar -czf "$name.tar.gz" "$name"
           shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
       - name: Package Windows binary
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
-          $name = "gradle-checker-$env:GITHUB_REF_NAME-${{ matrix.target }}"
+          $name = "gradlens-$env:GITHUB_REF_NAME-${{ matrix.target }}"
           New-Item -ItemType Directory $name | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/gradle-checker.exe", "README.md", "LICENSE", "install.ps1" $name
+          Copy-Item "target/${{ matrix.target }}/release/gradlens.exe", "README.md", "LICENSE", "install.ps1" $name
           Compress-Archive -Path $name -DestinationPath "$name.zip"
           $hash = (Get-FileHash "$name.zip" -Algorithm SHA256).Hash.ToLower()
           "$hash  $name.zip" | Set-Content "$name.zip.sha256"
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: gradle-checker-${{ matrix.target }}
-          path: gradle-checker-${{ github.ref_name }}-${{ matrix.target }}.*
+          name: gradlens-${{ matrix.target }}
+          path: gradlens-${{ github.ref_name }}-${{ matrix.target }}.*
           if-no-files-found: error
 
   release:
@@ -75,6 +75,14 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Check out installer scripts
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Add standalone installers
+        run: |
+          cp scripts/install-release.sh dist/gradlens-installer.sh
+          cp scripts/install-release.ps1 dist/gradlens-installer.ps1
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

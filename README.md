@@ -1,4 +1,4 @@
-# gradle-checker
+# gradlens
 
 A Rust CLI for reviewing Android Gradle version-catalog dependencies. It resolves dependencies through the project's Gradle Wrapper, shows transitive dependency trees, finds release notes for Gradle-selected versions, and compares catalog changes against a baseline Git branch.
 
@@ -14,37 +14,32 @@ A Rust CLI for reviewing Android Gradle version-catalog dependencies. It resolve
 ### macOS and Linux
 
 ```sh
-./install.sh
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/lscythe/gradlens/releases/latest/download/gradlens-installer.sh | sh
 ```
 
-The default destination is `${CARGO_HOME:-$HOME/.cargo}/bin`. Override it with:
+The default destination is `${CARGO_HOME:-$HOME/.cargo}/bin`. To select another location:
 
 ```sh
-INSTALL_DIR="$HOME/.local/bin" ./install.sh
-# or
-PREFIX=/usr/local ./install.sh
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/lscythe/gradlens/releases/latest/download/gradlens-installer.sh |
+  INSTALL_DIR="$HOME/.local/bin" sh
 ```
 
 ### Windows PowerShell
 
 ```powershell
-.\install.ps1
+irm https://github.com/lscythe/gradlens/releases/latest/download/gradlens-installer.ps1 | iex
 ```
 
-The default destination is `$env:CARGO_HOME\bin`, falling back to `$HOME\.cargo\bin`. Override it with:
-
-```powershell
-.\install.ps1 -InstallDir "$HOME\bin"
-```
+The remote installers download the matching release archive and verify its SHA-256 checksum. To build and install from a source checkout instead, use `./install.sh` or `.\install.ps1`.
 
 ## Usage
-
-Run commands from the Gradle project you want to inspect.
 
 ### Interactive interface
 
 ```sh
-gradle-checker
+gradlens
 ```
 
 Controls:
@@ -60,14 +55,14 @@ Controls:
 ### Plain output
 
 ```sh
-gradle-checker inspect \
+gradlens inspect \
   --configuration :app:releaseRuntimeClasspath
 ```
 
 Use another catalog path when needed:
 
 ```sh
-gradle-checker inspect \
+gradlens inspect \
   --catalog gradle/custom.versions.toml \
   --configuration :app:releaseRuntimeClasspath
 ```
@@ -77,7 +72,7 @@ gradle-checker inspect \
 Compare the current branch's catalog with the tip of an explicit baseline branch:
 
 ```sh
-gradle-checker inspect \
+gradlens inspect \
   --baseline develop \
   --configuration :app:releaseRuntimeClasspath
 ```
@@ -85,14 +80,14 @@ gradle-checker inspect \
 The interactive equivalent is:
 
 ```sh
-gradle-checker --baseline develop
+gradlens --baseline develop
 ```
 
 Comparison mode reports added, removed, updated, and module-coordinate changes. Unchanged libraries are hidden. For current libraries it also shows Gradle's selected version, transitive dependencies, and release notes. The baseline catalog is read with `git show`; the baseline branch is never checked out or modified.
 
 ## How resolution works
 
-`gradle-checker` injects a temporary Gradle init script and invokes the target project's Wrapper. Gradle therefore remains authoritative for variants, BOMs, constraints, substitutions, exclusions, repositories, and conflict resolution. The target project's build files are not modified.
+`gradlens` injects a temporary Gradle init script and invokes the target project's Wrapper. Gradle therefore remains authoritative for variants, BOMs, constraints, substitutions, exclusions, repositories, and conflict resolution. The target project's build files are not modified.
 
 Release-note lookup prefers an exact page for the selected version. When that cannot be verified, the output labels a metadata-derived generic releases page as `generic`, or reports `none` rather than presenting a guessed URL as exact.
 
@@ -104,6 +99,6 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 
 ```sh
 cargo test
-cargo clippy --bin gradle-checker -- -D warnings
+cargo clippy --bin gradlens -- -D warnings
 cargo fmt --check
 ```

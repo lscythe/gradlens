@@ -1,7 +1,7 @@
 use std::process::Command;
 
 fn command(arguments: &[&str]) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_gradle-checker"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_gradlens"));
     command.args(arguments);
     command
 }

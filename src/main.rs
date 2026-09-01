@@ -42,6 +42,6 @@ async fn main() -> ExitCode {
 }
 
 fn unavailable(message: &str) -> ExitCode {
-    eprintln!("gradle-checker: {message}");
+    eprintln!("gradlens: {message}");
     ExitCode::FAILURE
 }

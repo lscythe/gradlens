@@ -1,9 +1,9 @@
 [package]
-name = "gradle-checker"
+name = "gradlens"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
-repository = "https://github.com/lscythe/gradle-checker"
+repository = "https://github.com/lscythe/gradlens"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }

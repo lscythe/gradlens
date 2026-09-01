@@ -49,7 +49,7 @@ fn reports_missing_version_reference_with_alias() {
 
 #[test]
 fn rejects_malformed_string_coordinate() {
-    let path = std::env::temp_dir().join(format!("gradle-checker-{}.toml", std::process::id()));
+    let path = std::env::temp_dir().join(format!("gradlens-{}.toml", std::process::id()));
     fs::write(&path, "[libraries]\nbad = \"only:two\"\n").unwrap();
     let error = catalog::parse(&path).unwrap_err().to_string();
     fs::remove_file(path).unwrap();
