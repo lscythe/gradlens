@@ -2,12 +2,15 @@ pub mod app;
 pub mod theme;
 pub mod ui;
 
-use std::{io, time::Duration};
+use std::{
+    io,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::DefaultTerminal;
 
-use crate::inspect::Inspector;
+use crate::{export, inspect::Inspector, plain};
 use app::{Action, App};
 use theme::Theme;
 
@@ -49,6 +52,22 @@ fn run_loop(terminal: &mut DefaultTerminal, inspector: Inspector) -> io::Result<
                 KeyCode::Char('/') => Action::StartSearch,
                 KeyCode::Char('?') => Action::ToggleHelp,
                 KeyCode::Char('r') => Action::Refresh,
+                KeyCode::Char('e') => {
+                    if let Some(inspection) = &app.inspection {
+                        let timestamp = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs();
+                        let path = export::available_tui_path(std::path::Path::new("."), timestamp);
+                        app.status = Some(
+                            match export::write(&path, &plain::render(inspection), false) {
+                                Ok(()) => format!("Saved report to {}", path.display()),
+                                Err(error) => format!("Export failed: {error}"),
+                            },
+                        );
+                    }
+                    continue;
+                }
                 KeyCode::Esc => Action::Escape,
                 KeyCode::Backspace => Action::Backspace,
                 KeyCode::Char(c)

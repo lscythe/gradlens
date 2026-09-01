@@ -30,9 +30,12 @@ pub fn render(frame: &mut Frame, app: &mut App, theme: &Theme) {
     let status = if app.loading {
         "⠋ resolving…  [Esc] cancel"
     } else {
-        "[/] search  [Enter] expand  [o] open  [r] refresh  [?] help  [q] quit"
+        "[/] search  [e] export  [Enter] expand  [r] refresh  [?] help  [q] quit"
     };
-    frame.render_widget(Paragraph::new(status).style(theme.muted), footer);
+    frame.render_widget(
+        Paragraph::new(app.status.as_deref().unwrap_or(status)).style(theme.muted),
+        footer,
+    );
     if app.mode == Mode::Help {
         render_help(frame, theme);
     }
@@ -236,7 +239,7 @@ fn render_help(frame: &mut Frame, theme: &Theme) {
         Paragraph::new(vec![
             Line::from(Span::styled("Keyboard help", theme.focus)),
             Line::from("Tab/Shift+Tab focus   ↑↓ or j/k navigate"),
-            Line::from("/ search   r refresh   o open URL"),
+            Line::from("/ search   e export report   r refresh"),
             Line::from("Esc close/cancel   q quit"),
         ])
         .block(Block::bordered().title("Help")),

@@ -25,4 +25,12 @@ pub struct InspectArgs {
 
     #[arg(long)]
     pub configuration: String,
+
+    /// Write the plain-text report to this file. Use '-' for stdout.
+    #[arg(long, default_value = "-")]
+    pub output: PathBuf,
+
+    /// Overwrite an existing output file.
+    #[arg(long)]
+    pub force: bool,
 }

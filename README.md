@@ -67,6 +67,17 @@ gradlens inspect \
   --configuration :app:releaseRuntimeClasspath
 ```
 
+
+Write the report directly to a file:
+
+```sh
+gradlens inspect \
+  --configuration :app:releaseRuntimeClasspath \
+  --output dependency-report.txt
+```
+
+Gradlens refuses to replace an existing report unless `--force` is supplied. Shell redirection remains supported. In the interactive interface, press `e` to export the complete active inspection to `gradlens-report.txt`; if that file exists, Gradlens creates a timestamped filename.
+
 ### Compare a version-update branch
 
 Compare the current branch's catalog with the tip of an explicit baseline branch:

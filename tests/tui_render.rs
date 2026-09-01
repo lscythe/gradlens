@@ -38,6 +38,7 @@ fn wide_layout_shows_all_panels_and_help() {
         "Release notes",
         "search",
         "quit",
+        "export",
     ] {
         assert!(output.contains(label), "missing {label}");
     }

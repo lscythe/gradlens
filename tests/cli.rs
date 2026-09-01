@@ -22,4 +22,6 @@ fn inspect_help_accepts_catalog_and_configuration() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("--catalog"));
     assert!(stdout.contains("--configuration"));
+    assert!(stdout.contains("--output"));
+    assert!(stdout.contains("--force"));
 }

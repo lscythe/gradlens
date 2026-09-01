@@ -1,6 +1,7 @@
 mod catalog;
 mod changes;
 mod cli;
+mod export;
 mod gradle;
 mod graph;
 mod inspect;
@@ -21,11 +22,25 @@ use clap::Parser;
 async fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
-        Some(Command::Inspect(args)) => match Inspector::new(".", args.catalog, cli.baseline) {
+        Some(Command::Inspect(args)) => match Inspector::new(".", &args.catalog, cli.baseline) {
             Ok(inspector) => match inspector.inspect(&args.configuration).await {
                 Ok(result) => {
-                    print!("{}", plain::render(&result));
-                    ExitCode::SUCCESS
+                    let report = plain::render(&result);
+                    if args.output.as_os_str() == "-" {
+                        print!("{report}");
+                        ExitCode::SUCCESS
+                    } else {
+                        match export::write(&args.output, &report, args.force) {
+                            Ok(()) => {
+                                eprintln!("Saved report to {}", args.output.display());
+                                ExitCode::SUCCESS
+                            }
+                            Err(error) => unavailable(&format!(
+                                "cannot write {}: {error}",
+                                args.output.display()
+                            )),
+                        }
+                    }
                 }
                 Err(error) => unavailable(&error.to_string()),
             },

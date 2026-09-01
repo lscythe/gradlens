@@ -57,6 +57,7 @@ pub struct App {
     pub loading: bool,
     pub inspection: Option<Inspection>,
     pub error: Option<String>,
+    pub status: Option<String>,
     pub should_quit: bool,
 }
 
