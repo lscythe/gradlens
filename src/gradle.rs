@@ -6,7 +6,6 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use tempfile::NamedTempFile;
 use thiserror::Error;
 
 use crate::model::ComponentId;
@@ -75,7 +74,7 @@ impl GradleInspector {
     }
 
     pub fn configurations(&self) -> Result<Vec<String>, GradleError> {
-        let output = self.invoke("list", None)?;
+        let output = self.invoke("list", None, &[])?;
         let payload: ConfigurationPayload = decode_payload(&output)?;
         Ok(payload
             .configurations
@@ -84,37 +83,76 @@ impl GradleInspector {
             .collect())
     }
 
-    pub fn resolve(&self, selector: &str) -> Result<ResolvedGraph, GradleError> {
-        decode_graph(&self.invoke("resolve", Some(selector))?)
+    pub fn resolve(
+        &self,
+        selector: &str,
+        modules: &[crate::model::ModuleId],
+    ) -> Result<ResolvedGraph, GradleError> {
+        decode_graph(&self.invoke("resolve", Some(selector), modules)?)
     }
 
-    fn invoke(&self, mode: &str, selector: Option<&str>) -> Result<String, GradleError> {
+    fn invoke(
+        &self,
+        mode: &str,
+        selector: Option<&str>,
+        modules: &[crate::model::ModuleId],
+    ) -> Result<String, GradleError> {
         let wrapper = wrapper_path(&self.project_root)
             .ok_or_else(|| GradleError::MissingWrapper(self.project_root.display().to_string()))?;
-        let mut script = NamedTempFile::new()?;
-        std::io::Write::write_all(&mut script, INIT_SCRIPT.as_bytes())?;
+        let script = write_init_script()?;
         let mut command = Command::new(wrapper);
         command
             .current_dir(&self.project_root)
             .arg("--init-script")
             .arg(script.path())
             .arg("--console=plain")
+            .arg("--no-configuration-cache")
             .arg("gradleCheckerInspect")
             .arg(format!("-PgradleCheckerMode={mode}"));
         if let Some(selector) = selector {
             command.arg(format!("-PgradleCheckerConfiguration={selector}"));
         }
+        if !modules.is_empty() {
+            command.arg(format!(
+                "-PgradlensModules={}",
+                modules
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
+        }
         let output = command.output()?;
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
-            return Err(GradleError::Process(if stderr.is_empty() {
-                format!("exit status {}", output.status)
-            } else {
-                stderr
-            }));
+            return Err(GradleError::Process(process_failure(
+                &output.stdout,
+                &output.stderr,
+                &output.status.to_string(),
+            )));
         }
         Ok(String::from_utf8_lossy(&output.stdout).into_owned())
     }
+}
+
+pub fn process_failure(stdout: &[u8], stderr: &[u8], status: &str) -> String {
+    let stdout = String::from_utf8_lossy(stdout);
+    let stderr = String::from_utf8_lossy(stderr);
+    let details = [stdout.trim(), stderr.trim()]
+        .into_iter()
+        .filter(|value| !value.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+    if details.is_empty() {
+        status.into()
+    } else {
+        details
+    }
+}
+
+pub fn write_init_script() -> Result<tempfile::NamedTempFile, GradleError> {
+    let mut script = tempfile::Builder::new().suffix(".gradle.kts").tempfile()?;
+    std::io::Write::write_all(&mut script, INIT_SCRIPT.as_bytes())?;
+    Ok(script)
 }
 
 #[derive(Deserialize)]

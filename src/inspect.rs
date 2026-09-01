@@ -56,7 +56,27 @@ impl Inspector {
             .as_deref()
             .map(|baseline| changes::load(&self.project_root, baseline, &catalog_path, &catalog))
             .transpose()?;
-        let graph = GradleInspector::new(&self.project_root).resolve(selector)?;
+        let modules = changes
+            .as_ref()
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(|change| {
+                        change
+                            .current
+                            .as_ref()
+                            .map(|component| component.module.clone())
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_else(|| {
+                catalog
+                    .libraries
+                    .iter()
+                    .map(|library| library.module.clone())
+                    .collect()
+            });
+        let graph = GradleInspector::new(&self.project_root).resolve(selector, &modules)?;
         let resolved = graph::map_used_libraries(&catalog, &graph);
         let mut libraries = Vec::with_capacity(resolved.len());
         for library in resolved {

@@ -6,18 +6,18 @@ val begin = "GRADLE_CHECKER_BEGIN"
 val end = "GRADLE_CHECKER_END"
 
 gradle.projectsEvaluated {
-    val task = gradle.rootProject.tasks.register("gradleCheckerInspect") {
+    gradle.rootProject.tasks.register("gradleCheckerInspect") {
         doLast {
             val candidates = gradle.rootProject.allprojects.flatMap { project ->
                 project.configurations.filter { it.isCanBeResolved }.map { project to it }
             }
-            val mode = providers.gradleProperty("gradleCheckerMode").orElse("list").get()
+            val mode = gradle.rootProject.providers.gradleProperty("gradleCheckerMode").orElse("list").get()
             val payload: Any = if (mode == "list") {
                 mapOf("configurations" to candidates.map { (project, configuration) ->
                     mapOf("project" to project.path, "name" to configuration.name)
                 })
             } else {
-                val selector = providers.gradleProperty("gradleCheckerConfiguration").get()
+                val selector = gradle.rootProject.providers.gradleProperty("gradleCheckerConfiguration").get()
                 val matches = candidates.filter { (project, configuration) ->
                     val qualified = if (project.path == ":") ":${configuration.name}" else "${project.path}:${configuration.name}"
                     if (selector.startsWith(":")) qualified == selector else configuration.name == selector
@@ -27,6 +27,7 @@ gradle.projectsEvaluated {
                     else "configuration '$selector' is ambiguous: " + matches.joinToString { "${it.first.path}:${it.second.name}" }
                 }
                 val root = matches.single().second.incoming.resolutionResult.root
+                val requestedModules = gradle.rootProject.providers.gradleProperty("gradlensModules").orNull?.split(',')?.toSet().orEmpty()
                 val components = linkedMapOf<String, Any>()
                 fun visit(component: ResolvedComponentResult) {
                     val id = component.id as? ModuleComponentIdentifier ?: return
@@ -46,11 +47,16 @@ gradle.projectsEvaluated {
                         (dependency as? org.gradle.api.artifacts.result.ResolvedDependencyResult)?.selected?.let(::visit)
                     }
                 }
-                root.dependencies.forEach { dependency ->
-                    (dependency as? org.gradle.api.artifacts.result.ResolvedDependencyResult)?.selected?.let(::visit)
+                val directComponents = root.dependencies.mapNotNull { dependency ->
+                    (dependency as? org.gradle.api.artifacts.result.ResolvedDependencyResult)?.selected
                 }
-                val roots = root.dependencies.mapNotNull { dependency ->
-                    val id = (dependency as? org.gradle.api.artifacts.result.ResolvedDependencyResult)?.selected?.id as? ModuleComponentIdentifier
+                val selectedRoots = directComponents.filter { component ->
+                    val id = component.id as? ModuleComponentIdentifier
+                    id != null && "${id.group}:${id.module}" in requestedModules
+                }
+                selectedRoots.forEach(::visit)
+                val roots = selectedRoots.mapNotNull { component ->
+                    val id = component.id as? ModuleComponentIdentifier
                     id?.let { "${it.group}:${it.module}:${it.version}" }
                 }.distinct().sorted()
                 mapOf("components" to components, "roots" to roots)

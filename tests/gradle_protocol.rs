@@ -53,3 +53,10 @@ fn resolves_qualified_unique_and_ambiguous_selectors() {
     );
     assert!(resolve_selector("missing", &values).is_err());
 }
+
+#[test]
+fn combines_gradle_stdout_and_stderr() {
+    let message = gradle::process_failure(b"stdout detail\n", b"stderr detail\n", "exit status: 1");
+    assert!(message.contains("stdout detail"));
+    assert!(message.contains("stderr detail"));
+}
