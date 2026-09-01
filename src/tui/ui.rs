@@ -82,32 +82,31 @@ fn block(title: &'static str, focused: bool, theme: &Theme) -> Block<'static> {
         .title(title)
         .border_style(if focused { theme.focus } else { theme.muted })
 }
-fn render_configurations(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, theme: &Theme) {
+fn render_configurations(
+    frame: &mut Frame,
+    area: ratatui::layout::Rect,
+    app: &mut App,
+    theme: &Theme,
+) {
     let items: Vec<_> = app
         .configurations
         .iter()
         .enumerate()
         .filter(|(_, v)| filter(v, &app.search))
-        .map(|(i, v)| {
-            ListItem::new(if i == app.configuration_index {
-                format!("> {v}")
-            } else {
-                format!("  {v}")
-            })
-        })
+        .map(|(_, v)| ListItem::new(v.as_str()))
         .collect();
-    frame.render_widget(
-        List::new(items)
-            .block(block(
-                "Configurations",
-                app.focus == Focus::Configurations,
-                theme,
-            ))
-            .style(theme.text),
-        area,
-    );
+    let list = List::new(items)
+        .block(block(
+            "Configurations",
+            app.focus == Focus::Configurations,
+            theme,
+        ))
+        .highlight_symbol("> ")
+        .highlight_style(theme.focus)
+        .style(theme.text);
+    frame.render_stateful_widget(list, area, &mut app.configuration_list_state);
 }
-fn render_libraries(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, theme: &Theme) {
+fn render_libraries(frame: &mut Frame, area: ratatui::layout::Rect, app: &mut App, theme: &Theme) {
     let items: Vec<_> = app
         .inspection
         .as_ref()
@@ -117,27 +116,23 @@ fn render_libraries(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, t
                 .iter()
                 .enumerate()
                 .filter(|(_, v)| filter(&v.alias, &app.search))
-                .map(|(i, v)| {
+                .map(|(_, v)| {
                     let change = v
                         .change
                         .as_ref()
                         .map(|change| format!(" [{}]", change.kind.label()))
                         .unwrap_or_default();
-                    ListItem::new(if i == app.library_index {
-                        format!("> {}{change}", v.alias)
-                    } else {
-                        format!("  {}{change}", v.alias)
-                    })
+                    ListItem::new(format!("{}{change}", v.alias))
                 })
                 .collect()
         })
         .unwrap_or_default();
-    frame.render_widget(
-        List::new(items)
-            .block(block("Libraries", app.focus == Focus::Libraries, theme))
-            .style(theme.text),
-        area,
-    );
+    let list = List::new(items)
+        .block(block("Libraries", app.focus == Focus::Libraries, theme))
+        .highlight_symbol("> ")
+        .highlight_style(theme.focus)
+        .style(theme.text);
+    frame.render_stateful_widget(list, area, &mut app.library_list_state);
 }
 fn render_tree(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, theme: &Theme) {
     let mut lines = Vec::new();

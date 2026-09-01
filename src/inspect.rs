@@ -7,7 +7,7 @@ use crate::{
     changes::{self, ChangeError},
     gradle::{GradleError, GradleInspector},
     graph,
-    model::{ChangeKind, Inspection, LibraryInspection},
+    model::{Inspection, LibraryInspection},
     releases::{ReleaseCandidate, ReleaseResolver},
 };
 
@@ -103,10 +103,14 @@ impl Inspector {
                 change,
             });
         }
+        let resolved_aliases = libraries
+            .iter()
+            .map(|library| library.alias.as_str())
+            .collect::<std::collections::HashSet<_>>();
         let removed = changes
             .unwrap_or_default()
             .into_iter()
-            .filter(|change| change.kind == ChangeKind::Removed)
+            .filter(|change| !resolved_aliases.contains(change.alias.as_str()))
             .collect();
         Ok(Inspection {
             configuration: selector.into(),

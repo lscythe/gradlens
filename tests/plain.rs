@@ -49,3 +49,20 @@ fn renders_selected_version_release_and_tree_without_ansi() {
     assert!(output.contains("g:b:1"));
     assert!(!output.contains("\u{1b}["));
 }
+
+#[test]
+fn renders_changes_not_present_in_configuration() {
+    let inspection = Inspection {
+        configuration: ":app:runtimeClasspath".into(),
+        libraries: vec![],
+        removed: vec![LibraryChange {
+            alias: "kotlin-gradle-plugin".into(),
+            kind: ChangeKind::Updated,
+            baseline: Some(id("kotlin-gradle-plugin", "2.0")),
+            current: Some(id("kotlin-gradle-plugin", "2.2")),
+        }],
+    };
+    let output = plain::render(&inspection);
+    assert!(output.contains("changes not present in configuration"));
+    assert!(output.contains("kotlin-gradle-plugin"));
+}

@@ -53,6 +53,8 @@ pub struct App {
     pub configurations: Vec<String>,
     pub configuration_index: usize,
     pub library_index: usize,
+    pub configuration_list_state: ratatui::widgets::ListState,
+    pub library_list_state: ratatui::widgets::ListState,
     pub request_id: u64,
     pub loading: bool,
     pub inspection: Option<Inspection>,
@@ -104,11 +106,13 @@ impl App {
             {
                 self.configurations = values;
                 self.configuration_index = 0;
+                self.configuration_list_state.select(Some(0));
                 self.loading = false;
             }
             Action::InspectionLoaded { request_id, value } if request_id == self.request_id => {
                 self.inspection = Some(value);
                 self.library_index = 0;
+                self.library_list_state.select(Some(0));
                 self.loading = false;
             }
             Action::Failed {
@@ -135,6 +139,13 @@ impl App {
         };
         if len != 0 {
             *index = ((*index as isize + delta).rem_euclid(len as isize)) as usize;
+        }
+        match self.focus {
+            Focus::Configurations => self
+                .configuration_list_state
+                .select(Some(self.configuration_index)),
+            Focus::Libraries => self.library_list_state.select(Some(self.library_index)),
+            _ => {}
         }
     }
 }

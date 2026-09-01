@@ -66,17 +66,26 @@ pub fn render(inspection: &Inspection) -> String {
         }
     }
     if !inspection.removed.is_empty() {
-        let _ = writeln!(output, "\nremoved libraries:");
+        let _ = writeln!(output, "\nchanges not present in configuration:");
         for change in &inspection.removed {
+            let _ = writeln!(output, "  {} [{}]", change.alias, change.kind.label());
             let _ = writeln!(
                 output,
-                "  {}: {}",
-                change.alias,
+                "    baseline: {}",
                 change
                     .baseline
                     .as_ref()
                     .map(ToString::to_string)
-                    .unwrap_or_else(|| "unknown".into())
+                    .unwrap_or_else(|| "not present".into())
+            );
+            let _ = writeln!(
+                output,
+                "    current:  {}",
+                change
+                    .current
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| "not present".into())
             );
         }
     }
