@@ -1,5 +1,8 @@
 use std::fmt;
 
+#[derive(
+    Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize,
+)]
 pub struct ModuleId {
     pub group: String,
     pub name: String,
@@ -11,6 +14,9 @@ impl fmt::Display for ModuleId {
     }
 }
 
+#[derive(
+    Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize,
+)]
 pub struct ComponentId {
     pub module: ModuleId,
     pub version: String,
@@ -22,18 +28,21 @@ impl fmt::Display for ComponentId {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct DependencyNode {
     pub component: ComponentId,
     pub children: Vec<DependencyNode>,
     pub cycle: bool,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReleaseMatch {
     Exact,
     Generic,
     None,
 }
 
+#[derive(Clone, Debug)]
 pub struct ReleaseLink {
     pub version: String,
     pub url: Option<url::Url>,
@@ -41,6 +50,7 @@ pub struct ReleaseLink {
     pub diagnostic: Option<String>,
 }
 
+#[derive(Clone, Debug)]
 pub struct LibraryInspection {
     pub alias: String,
     pub requested: Option<ComponentId>,
@@ -49,6 +59,7 @@ pub struct LibraryInspection {
     pub release: ReleaseLink,
 }
 
+#[derive(Clone, Debug)]
 pub struct Inspection {
     pub configuration: String,
     pub libraries: Vec<LibraryInspection>,

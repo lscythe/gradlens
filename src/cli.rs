@@ -16,7 +16,7 @@ pub enum Command {
 
 #[derive(Args)]
 pub struct InspectArgs {
-    #[arg(long)]
+    #[arg(long, default_value = "gradle/libs.versions.toml")]
     pub catalog: PathBuf,
 
     #[arg(long)]

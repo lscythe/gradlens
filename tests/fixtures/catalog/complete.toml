@@ -1,0 +1,11 @@
+[versions]
+shared = "1.2.3"
+rich-version = { strictly = "4.0", require = "3.9", prefer = "3.8" }
+
+[libraries]
+string = "com.acme:string:1.0"
+inline = { module = "com.acme:inline", version = "2.0" }
+referenced = { module = "com.acme:referenced", version.ref = "shared" }
+group-name = { group = "com.acme", name = "grouped", version = "3.0" }
+rich = { module = "com.acme:rich", version.ref = "rich-version" }
+noversion = { module = "com.acme:platform" }

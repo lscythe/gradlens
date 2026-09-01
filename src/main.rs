@@ -1,22 +1,42 @@
+mod catalog;
 mod cli;
-#[allow(dead_code)]
+mod gradle;
+mod graph;
+mod inspect;
 mod model;
+mod plain;
+mod releases;
+mod tui;
 
 use std::process::ExitCode;
 
+use crate::{
+    cli::{Cli, Command},
+    inspect::Inspector,
+};
 use clap::Parser;
 
-use crate::cli::{Cli, Command};
-
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
     match Cli::parse().command {
-        Some(Command::Inspect(_)) => unavailable("inspect is not yet wired"),
-        None => run_tui(),
+        Some(Command::Inspect(args)) => match Inspector::new(".", args.catalog) {
+            Ok(inspector) => match inspector.inspect(&args.configuration).await {
+                Ok(result) => {
+                    print!("{}", plain::render(&result));
+                    ExitCode::SUCCESS
+                }
+                Err(error) => unavailable(&error.to_string()),
+            },
+            Err(error) => unavailable(&error.to_string()),
+        },
+        None => match Inspector::new(".", "gradle/libs.versions.toml") {
+            Ok(inspector) => match tui::run(inspector) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => unavailable(&error.to_string()),
+            },
+            Err(error) => unavailable(&error.to_string()),
+        },
     }
-}
-
-fn run_tui() -> ExitCode {
-    unavailable("interactive mode is not yet available")
 }
 
 fn unavailable(message: &str) -> ExitCode {

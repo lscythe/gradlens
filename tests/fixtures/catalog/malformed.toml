@@ -1,0 +1,2 @@
+[libraries]
+broken = { module = "com.acme:broken", version.ref = "missing" }
