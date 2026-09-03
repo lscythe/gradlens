@@ -154,11 +154,17 @@ fn render_tree(frame: &mut Frame, area: ratatui::layout::Rect, app: &App, theme:
     );
 }
 fn tree_lines<'a>(node: &'a DependencyNode, prefix: &str, last: bool, out: &mut Vec<Line<'a>>) {
+    let annotation = if node.cycle {
+        " (cycle)"
+    } else if node.repeated {
+        " (already shown)"
+    } else {
+        ""
+    };
     out.push(Line::from(format!(
-        "{prefix}{} {}{}",
+        "{prefix}{} {}{annotation}",
         if last { "└─" } else { "├─" },
         node.component,
-        if node.cycle { " (cycle)" } else { "" }
     )));
     let next = format!("{prefix}{} ", if last { " " } else { "│" });
     for (i, child) in node.children.iter().enumerate() {

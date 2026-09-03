@@ -33,6 +33,7 @@ pub struct DependencyNode {
     pub component: ComponentId,
     pub children: Vec<DependencyNode>,
     pub cycle: bool,
+    pub repeated: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

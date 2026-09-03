@@ -31,6 +31,7 @@ fn renders_selected_version_release_and_tree_without_ansi() {
                 component: id("b", "1"),
                 children: vec![],
                 cycle: false,
+                repeated: false,
             }],
             release: ReleaseLink {
                 version: "2".into(),

@@ -94,8 +94,14 @@ pub fn render(inspection: &Inspection) -> String {
 
 fn render_node(output: &mut String, node: &DependencyNode, prefix: &str, last: bool) {
     let branch = if last { "└──" } else { "├──" };
-    let cycle = if node.cycle { " (cycle)" } else { "" };
-    let _ = writeln!(output, "{prefix}{branch} {}{cycle}", node.component);
+    let annotation = if node.cycle {
+        " (cycle)"
+    } else if node.repeated {
+        " (already shown)"
+    } else {
+        ""
+    };
+    let _ = writeln!(output, "{prefix}{branch} {}{annotation}", node.component);
     let child_prefix = format!("{prefix}{}   ", if last { " " } else { "│" });
     for (index, child) in node.children.iter().enumerate() {
         render_node(
