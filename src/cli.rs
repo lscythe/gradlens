@@ -33,4 +33,12 @@ pub struct InspectArgs {
     /// Overwrite an existing output file.
     #[arg(long)]
     pub force: bool,
+
+    /// Render a concise lead-oriented report without dependency trees.
+    #[arg(long)]
+    pub summary: bool,
+
+    /// Include only dependencies with a discovered release-notes URL.
+    #[arg(long)]
+    pub release_notes_only: bool,
 }

@@ -24,4 +24,6 @@ fn inspect_help_accepts_catalog_and_configuration() {
     assert!(stdout.contains("--configuration"));
     assert!(stdout.contains("--output"));
     assert!(stdout.contains("--force"));
+    assert!(stdout.contains("--summary"));
+    assert!(stdout.contains("--release-notes-only"));
 }

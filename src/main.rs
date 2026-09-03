@@ -25,7 +25,16 @@ async fn main() -> ExitCode {
         Some(Command::Inspect(args)) => match Inspector::new(".", &args.catalog, cli.baseline) {
             Ok(inspector) => match inspector.inspect(&args.configuration).await {
                 Ok(result) => {
-                    let report = plain::render(&result);
+                    let result = if args.release_notes_only {
+                        plain::with_release_notes(&result)
+                    } else {
+                        result
+                    };
+                    let report = if args.summary {
+                        plain::render_summary(&result)
+                    } else {
+                        plain::render(&result)
+                    };
                     if args.output.as_os_str() == "-" {
                         print!("{report}");
                         ExitCode::SUCCESS

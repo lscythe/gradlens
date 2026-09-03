@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::model::{DependencyNode, Inspection, ReleaseMatch};
+use crate::model::{ChangeKind, DependencyNode, Inspection, ReleaseMatch};
 
 pub fn render(inspection: &Inspection) -> String {
     let mut output = format!("configuration: {}\n", inspection.configuration);
@@ -87,6 +87,73 @@ pub fn render(inspection: &Inspection) -> String {
                     .map(ToString::to_string)
                     .unwrap_or_else(|| "not present".into())
             );
+        }
+    }
+    output
+}
+
+pub fn with_release_notes(inspection: &Inspection) -> Inspection {
+    Inspection {
+        configuration: inspection.configuration.clone(),
+        libraries: inspection
+            .libraries
+            .iter()
+            .filter(|library| library.release.url.is_some())
+            .cloned()
+            .collect(),
+        removed: Vec::new(),
+    }
+}
+
+pub fn render_summary(inspection: &Inspection) -> String {
+    let count = |kind| {
+        inspection
+            .libraries
+            .iter()
+            .filter_map(|library| library.change.as_ref())
+            .chain(&inspection.removed)
+            .filter(|change| change.kind == kind)
+            .count()
+    };
+    let mut output = format!(
+        "configuration: {}\n\nsummary:\n  added: {}\n  updated: {}\n  module changed: {}\n  removed: {}\n",
+        inspection.configuration,
+        count(ChangeKind::Added),
+        count(ChangeKind::Updated),
+        count(ChangeKind::ModuleChanged),
+        count(ChangeKind::Removed),
+    );
+    if !inspection.libraries.is_empty() {
+        output.push_str("\nchanged dependencies:\n");
+        for library in &inspection.libraries {
+            let change = library.change.as_ref();
+            let baseline = change
+                .and_then(|change| change.baseline.as_ref())
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "not present".into());
+            let current = change
+                .and_then(|change| change.current.as_ref())
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "not present".into());
+            let requested = library
+                .requested
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "managed by Gradle".into());
+            let _ = writeln!(output, "  {}", library.alias);
+            let _ = writeln!(output, "    baseline:  {baseline}");
+            let _ = writeln!(output, "    current:   {current}");
+            let _ = writeln!(output, "    requested: {requested}");
+            let _ = writeln!(output, "    selected:  {}", library.selected);
+            if let Some(url) = &library.release.url {
+                let _ = writeln!(output, "    release:   {url}");
+            }
+        }
+    }
+    if !inspection.removed.is_empty() {
+        output.push_str("\nchanges not present in configuration:\n");
+        for change in &inspection.removed {
+            let _ = writeln!(output, "  {} [{}]", change.alias, change.kind.label());
         }
     }
     output
